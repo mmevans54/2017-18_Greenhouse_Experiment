@@ -1,0 +1,93 @@
+#Packages
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+
+#Greenhouse Data
+setwd("C:/Users/Mary/Desktop/GreenhouseDAta")
+GhRD <- read.csv("GH_RD.csv")
+#remove zeros from the analysis
+nozeroGhRD <- GhRD[ GhRD$Leaf.Number != 0 & 
+                        GhRD$Height !=0,]
+#log trans
+nozeroGhRD$logheight=log10(nozeroGhRD$Height)
+
+Rdat <- nozeroGhRD %>%
+select (Treatment : Leaf.Number, Height)%>%
+  gather ("Attribute", "Measurement", Leaf.Number : Height)%>%
+  mutate (Attribute = as.factor(Attribute),
+          Species = ifelse(Species == "BB", "Blueberry", "Low Bush Cranberry"))
+
+# Boxplots for Height and Leaf Number, both species
+ggplot(data = Rdat, aes(x = Treatment, y = (Measurement)))+
+  geom_boxplot(outlier.alpha=0)+
+  scale_y_log10() +
+  facet_grid(Attribute~Species, scales="free")+
+  geom_jitter(height = 0, width = 0.1, alpha =1, aes(col = Treatment))+
+  theme(axis.title.y=element_blank())+
+  labs(title="A Year of Plant Growth")+
+  theme(strip.background = element_blank())+
+  theme(legend.position="none")
+
+##single data file, subsetted to look at each species (BB and LBC): 
+setwd("C:/Users/Mary/Desktop/GreenhouseDAta")
+GhDatTS<-read.csv("GH_TS.csv")
+View(GhDatTS)
+
+tapply(GhDatTS$Height, GhDatTS$Treatment, mean, na.rm = TRUE)
+
+GhDatTS$Height = as.numeric(as.character(GhDatTS$Height))
+names(GhDatTS)
+str(GhDatTS)
+
+#Summary
+summary(as.factor(GhDatTS$Date)); summary(as.factor(GhDatTS$JulDate))
+
+#Setting up Julian Dates to correspond with Data; taking into account year and zero-ing values
+GhDatTS$Date
+GhDatTS$JulDate = 0
+GhDatTS$JulDate[GhDatTS$Date == 12302016] = 364 - 300
+GhDatTS$JulDate[GhDatTS$Date == 12162016] = 350 - 300
+GhDatTS$JulDate[GhDatTS$Date == 12092016] = 343 - 300
+GhDatTS$JulDate[GhDatTS$Date == 12022016] = 336 - 300
+GhDatTS$JulDate[GhDatTS$Date == 11252016] = 329 - 300
+GhDatTS$JulDate[GhDatTS$Date == 11182016] = 322 - 300
+GhDatTS$JulDate[GhDatTS$Date == 10272017] = 300 - 300
+GhDatTS$JulDate[GhDatTS$Date == 5072017] = 127 + 365 - 300
+GhDatTS$JulDate[GhDatTS$Date == 4232017] = 113 + 365 - 300
+GhDatTS$JulDate[GhDatTS$Date == 4072017] = 97 + 365 - 300
+GhDatTS$JulDate[GhDatTS$Date == 3102017] = 69 + 365 - 300
+GhDatTS$JulDate[GhDatTS$Date == 2242017] = 55 + 365 - 300
+GhDatTS$JulDate[GhDatTS$Date == 2102017] = 41 + 365 - 300
+GhDatTS$JulDate[GhDatTS$Date == 1142017] = 14 + 365 - 300
+GhDatTS$JulDate[GhDatTS$Date == 1272017] = 27 + 365 - 300
+
+#remove zeros from the analysis
+nozeroGhDatTS <- GhDatTS[ GhDatTS$Leaf.Number != 0 & 
+                        GhDatTS$Height !=0,]
+
+#log trans
+nozeroGhDatTS$logheight=log10(nozeroGhDatTS$Height)
+
+#Lineplot for TimeSeries
+BBHeight = subset(nozeroGhDatTS,Species == "BB")
+lineplot=ggplot(BBHeight,aes(x=JulDate,y=logheight,color=Treatment))+
+  geom_smooth(method="lm",se=FALSE)+
+  theme_classic()+
+  theme(axis.line.x=element_line(size=1,color='black'),
+  axis.line.y=element_line(size=1,color='black'))+
+  labs(title="A Year of Blueberry Growth") +
+  xlab("Julian Date") +
+  ylab("Log Height")
+lineplot
+
+#plot data points for comparison
+plot(GhDatTS$JulDate, GhDatTS$Height, type = "n")
+points(GhDatTS$JulDate[GhDatTS$Treatment == "UD"], 
+       GhDatTS$Height[GhDatTS$Treatment == "UD"], col = "green", pch = 19)
+
+points(GhDatTS$JulDate[GhDatTS$Treatment == "MD"] + 2, 
+       GhDatTS$Height[GhDatTS$Treatment == "MD"], col = "red", pch = 19)
+
+points(GhDatTS$JulDate[GhDatTS$Treatment == "Control"] + 4, 
+       GhDatTS$Height[GhDatTS$Treatment == "Control"], col = "black", pch = 19)
