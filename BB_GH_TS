@@ -1,0 +1,194 @@
+######################################################################
+######################################################################
+######################################################################
+######################################################################
+###################    GREENHOUSE DATA (BB)  ##############################
+#########################  GLM   #####################################
+######################################################################
+######################################################################
+######################################################################
+######################################################################
+######################################################################
+
+#Visulizations
+##single data file, subsetted to look at each species (BB and LBC): 
+setwd("C:/Users/Mary/Desktop")
+GhDatTS<-read.csv("GLM_GH_Dat.csv")
+View(GhDatTS)
+
+tapply(GhDatTS$Height, GhDatTS$Treatment, mean, na.rm = TRUE)
+
+#numerical data read
+GhDatTS$Height = as.numeric(as.character(GhDatTS$Height))
+names(GhDatTS)
+str(GhDatTS)
+
+#Summary
+summary(as.factor(GhDatTS$Date)); summary(as.factor(GhDatTS$Day))
+str(GhDatTS)
+
+
+#Setting up Project Start Dates to correspond with Data; taking into account year and zero-ing values
+GhDatTS$Date
+GhDatTS$Day = 0
+GhDatTS$Day[GhDatTS$Date == 12302016] = 364 - 300
+GhDatTS$Day[GhDatTS$Date == 12162016] = 350 - 300
+GhDatTS$Day[GhDatTS$Date == 12092016] = 343 - 300
+GhDatTS$Day[GhDatTS$Date == 12022016] = 336 - 300
+GhDatTS$Day[GhDatTS$Date == 11252016] = 329 - 300
+GhDatTS$Day[GhDatTS$Date == 11182016] = 322 - 300
+GhDatTS$Day[GhDatTS$Date == 10272017] = 300 - 300
+GhDatTS$Day[GhDatTS$Date == 5072017] = 127 + 365 - 300
+GhDatTS$Day[GhDatTS$Date == 4232017] = 113 + 365 - 300
+GhDatTS$Day[GhDatTS$Date == 4072017] = 97 + 365 - 300
+GhDatTS$Day[GhDatTS$Date == 3102017] = 69 + 365 - 300
+GhDatTS$Day[GhDatTS$Date == 2242017] = 55 + 365 - 300
+GhDatTS$Day[GhDatTS$Date == 2102017] = 41 + 365 - 300
+GhDatTS$Day[GhDatTS$Date == 1142017] = 14 + 365 - 300
+GhDatTS$Day[GhDatTS$Date == 1272017] = 27 + 365 - 300
+
+#remove zeros from the analysis, improve dataset for viewing
+#select dataframe with no zeros and JulDate >= 22
+GhDatTS0 <- GhDatTS[ GhDatTS$Leaf.Number != 0 & 
+                            GhDatTS$Height !=0 &
+                            GhDatTS$Day >= 22 &
+                            GhDatTS$Height <= 15,]
+
+#read as factor
+summary(as.factor(GhDatTS0$Height))
+summary(as.factor(GhDatTS0$Day))
+
+##GhDatTS0 quadratic and cubic date values
+GhDatTS0$Day2 = GhDatTS0$Day^2
+GhDatTS0$Day3 = GhDatTS0$Day^3
+
+#log trans for height
+GhDatTS0$LHeight=log10(GhDatTS0$Height)
+
+#Generalized Linear Models (Height and Leaf Number for BB and LBC)
+#A Year of Height Growth 
+trt2 = glm(GhDatTS0$Leaf.Number ~ GhDatTS0$Treatment + GhDatTS0$Day + 
+                GhDatTS0$Treatment:GhDatTS0$Day +
+                GhDatTS0$Treatment:GhDatTS0$Day2)
+
+#plot data points for comparison, #subsetted data
+#Leaf Number Blueberries
+#GLM for leaf number in blueberries, vizualization 
+#summary for GLMBBLN
+BBLeafNumber = subset(GhDatTS0,Species == "BB")
+GLMBBLN = glm(BBLeafNumber$Leaf.Number ~ BBLeafNumber$Treatment + BBLeafNumber$Day + 
+                BBLeafNumber$Treatment:BBLeafNumber$Day +
+                BBLeafNumber$Treatment:BBLeafNumber$Day2)
+summary(GLMBBLN)
+#########raw data########
+plot(BBLeafNumber$Day, BBLeafNumber$Leaf.Number, type = "n", xlab="Day", ylab="Leaf Number", main="Leaf Number for Blueberries")#, ylim=c(0,20))
+points(BBLeafNumber$Day[BBLeafNumber$Treatment == "UD"], 
+       BBLeafNumber$Leaf.Number[BBLeafNumber$Treatment == "UD"], col = "green", pch = 19)
+
+points(BBLeafNumber$Day[BBLeafNumber$Treatment == "MD"] + 2, 
+       BBLeafNumber$Leaf.Number[BBLeafNumber$Treatment == "MD"], col = "red", pch = 19)
+
+points(BBLeafNumber$Day[BBLeafNumber$Treatment == "Control"] + 4, 
+       BBLeafNumber$Leaf.Number[BBLeafNumber$Treatment == "Control"], col = "black", pch = 19)
+
+points(BBLeafNumber$Day[BBLeafNumber$Treatment == "SD"] + 4, 
+       BBLeafNumber$Leaf.Number[BBLeafNumber$Treatment == "SD"], col = "darkorchid3", pch = 19)
+########visual of fitted values with line #########
+plot(BBLeafNumber$Day, BBLeafNumber$Leaf.Number, type = "n", xlab="Day", ylab="Leaf Number", main="Leaf Number for Blueberries")#, ylim=c(0,20))
+points(BBLeafNumber$Day[BBLeafNumber$Treatment == "MD"],
+       GLMBBLN$fitted.values[BBLeafNumber$Treatment == "MD"], col = "red", 
+       pch = 19, cex = 1.5)
+points(BBLeafNumber$Day[BBLeafNumber$Treatment == "UD"],
+       GLMBBLN$fitted.values[BBLeafNumber$Treatment == "UD"], col = "green", 
+       pch = 19, cex = 1.5)
+points(BBLeafNumber$Day[BBLeafNumber$Treatment == "SD"],
+       GLMBBLN$fitted.values[BBLeafNumber$Treatment == "SD"], col = "darkorchid3", 
+       pch = 19, cex = 1.5)
+points(BBLeafNumber$Day[BBLeafNumber$Treatment == "Control"],
+       GLMBBLN$fitted.values[BBLeafNumber$Treatment == "Control"], col = "black", 
+       pch = 19, cex = 1.5)
+######making it pretty#######
+View(BBLeafNumber)
+BBLNmodel <- glm(Leaf.Number~ Treatment + Day + 
+                   Treatment:Day + Treatment:Day2, data=BBLeafNumber, 
+                 family=poisson (link="log"))
+BBplt <- within(BBLeafNumber, {
+  BBLNmodel <- factor(BBLNmodel, levels=1:4, labels=c("MD", "SD", "UD", "Control"))
+  id <- factor(id)
+})
+
+BBplt1 <- ggplot(BBplt, aes(x=Day,y=Leaf.Number,color=Treatment)) + 
+  geom_point(size = 2) + 
+  geom_smooth(method = "glm", se = F, 
+              method.args = list(family = "poisson"))+
+  theme(axis.line.x=element_line(size=1,color='black'),
+        axis.line.y=element_line(size=1,color='black'))+
+  scale_color_manual(values = c("black", "salmon", "light blue", "dark green" )) +
+  labs(title="Blueberry Leaf Growth") +
+  xlab("Day") +
+  ylab("Leaf Number")
+print(BBplt1)
+#####confidence intervals######
+
+#plot data points for comparison, #subsetted data
+#HeightBlueberries
+#GLM for height in blueberries, vizualization 
+#summary for GLMBBHt
+BBHeight = subset(GhDatTS0,Species == "BB")
+attach(BBHeight)
+GLMBBHt = glm(BBHeight$Height ~ BBHeight$Treatment + BBHeight$Day + 
+                BBHeight$Treatment:BBHeight$Day +
+                BBHeight$Treatment:BBHeight$Day2)
+summary(GLMBBHt)
+#########raw data########
+plot(BBHeight$Day, BBHeight$Height, type = "n", xlab="Day", ylab="Height", main="Height (cm) for Blueberries")#, ylim=c(0,20))
+points(BBHeight$Day[BBHeight$Treatment == "UD"], 
+       BBHeight$Height[BBHeight$Treatment == "UD"], col = "green", pch = 19)
+
+points(BBHeight$Day[BBHeight$Treatment == "MD"] + 2, 
+       BBHeight$Height[BBHeight$Treatment == "MD"], col = "red", pch = 19)
+
+points(BBHeight$Day[BBHeight$Treatment == "Control"] + 4, 
+       BBHeight$Height[BBHeight$Treatment == "Control"], col = "black", pch = 19)
+
+points(BBHeight$Day[BBHeight$Treatment == "SD"] + 4, 
+       BBHeight$Height[BBHeight$Treatment == "SD"], col = "darkorchid3", pch = 19)
+########visual of fitted values with line #########
+plot(BBHeight$Day, BBHeight$Height, type = "n", xlab="Day", ylab="Height", main="Height for Blueberries")#, ylim=c(0,20))
+points(BBHeight$Day[BBHeight$Treatment == "MD"],
+       GLMBBHt$fitted.values[BBHeight$Treatment == "MD"], col = "red", 
+       pch = 19, cex = 1.5)
+points(BBHeight$Day[BBHeight$Treatment == "UD"],
+       GLMBBHt$fitted.values[BBHeight$Treatment == "UD"], col = "green", 
+       pch = 19, cex = 1.5)
+points(BBHeight$Day[BBHeight$Treatment == "SD"],
+       GLMBBHt$fitted.values[BBHeight$Treatment == "SD"], col = "darkorchid3", 
+       pch = 19, cex = 1.5)
+points(BBHeight$Day[BBHeight$Treatment == "Control"],
+       GLMBBHt$fitted.values[BBHeight$Treatment == "Control"], col = "black", 
+       pch = 19, cex = 1.5)
+######making it pretty#######
+View(BBHeight)
+lBBHeight<-log(BBHeight$Height)
+BBHtmodel <- glm(Height~ Treatment + Day + 
+                   Treatment:Day + Treatment:Day2, data=lBBHeight, 
+                 family=poisson (link="log"))
+
+BBHtplot <- within(lBBHeight, {
+  BBLNmodel <- factor(BBHtmodel, levels=1:4, labels=c("MD", "SD", "UD", "Control"))
+  id <- factor(id)
+})
+
+plt1 <- ggplot(BBHtmodel, aes(x=Day,y=Height,color=Treatment)) + 
+  geom_point(size = 2) + 
+  geom_smooth(method = "glm", se = F, 
+              method.args = list(family = "poisson"))+
+  theme(axis.line.x=element_line(size=1,color='black'),
+        axis.line.y=element_line(size=1,color='black'))+
+  scale_color_manual(values = c("black", "salmon", "light blue", "dark green" )) +
+  labs(title="Blueberry Height") +
+  xlab("Day") +
+  ylab("Height (log)")
+print(plt1)
+
+
