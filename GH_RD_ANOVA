@@ -1,0 +1,70 @@
+######################################################################
+######################################################################
+######################################################################
+######################################################################
+############    MOST RECENT GREENHOUSE DATA  #########################
+########################  ANOVA   ####################################
+######################################################################
+######################################################################
+######################################################################
+######################################################################
+######################################################################
+#Packages
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+
+#Greenhouse Data
+setwd("C:/Users/Mary/Desktop/GreenhouseData")
+GhRD <- read.csv("GH_RD.csv")
+#remove zeros from the analysis
+nozeroGhRD <- GhRD[ GhRD$Leaf.Number != 0 & 
+                      GhRD$Height !=0,]
+#log trans
+nozeroGhRD$logheight=log10(nozeroGhRD$Height)
+
+Rdat <- nozeroGhRD %>%
+  select (Treatment : Leaf.Number, Height)%>%
+  gather ("Attribute", "Measurement", Leaf.Number : Height)%>%
+  mutate (Attribute = as.factor(Attribute),
+          Species = ifelse(Species == "BB", "Blueberry", "Low Bush Cranberry"))
+
+
+# Boxplots for Height and Leaf Number, both species
+ggplot(data = Rdat, aes(x = Treatment, y = (Measurement)))+
+  geom_boxplot(outlier.alpha=0)+
+  scale_y_log10() +
+  facet_grid(Attribute~Species, scales="free")+
+  geom_jitter(height = 0, width = 0.1, alpha =1, aes(col = Treatment))+
+  theme(axis.title.y=element_blank())+
+  labs(title="Microbial Innoculate Effect on Growth")+
+  theme(strip.background = element_blank())+
+  scale_x_discrete(limits=c("MD","SD","UD", "Sterile"))+
+  theme(legend.position="none")+
+  scale_color_manual(values = c("salmon", "light blue", "black", "light green" ))
+
+###Statistics###
+GhRD2 <- read.csv("GH_RD.csv")
+##BB Leaf Number
+BlueberryTest=subset(GhRD2,Species=="Blueberry")
+BBLNmodel=(aov(Leaf.Number~Treatment, data=GhRD2))
+summary(BBLNmodel)
+TukeyHSD(BBLNmodel)
+
+##BB Height
+BlueberryTest=subset(GhRD2,Species=="Blueberry")
+BBHmodel=(aov(Height~Treatment, data=GhRD2))
+summary(BBHmodel)
+TukeyHSD(BBHmodel)
+
+##LBC Leaf.Number
+CranberryTest=subset(GhRD2,Species=="Low Bush Cranberry")
+LBLNmodel=(aov(Leaf.Number~Treatment, data=GhRD2))
+summary(LBLNmodel)
+TukeyHSD(LBLNmodel)
+
+##LBC Height
+CranberryTest=subset(GhRD2,Species=="Low Bush Cranberry")
+LBHmodel=(aov(Height~Treatment, data=GhRD2))
+summary(LBHmodel)
+TukeyHSD(LBHmodel)
