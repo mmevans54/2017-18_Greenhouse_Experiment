@@ -46,3 +46,17 @@ geom_boxplot(aes(Treatment, Attribute), stat= "boxplot")+
   theme(legend.position="none")+
   scale_color_manual(values = c("salmon", "royal blue","black", "forest green" ))
 
+##########ANOVA###########
+
+######includes zeros########
+##BB ANOVA (Above-Ground Biomass)
+BB=subset(BDat,Species=="BB")
+BBmodel=(aov(Biomass..grams.~Treatment, data=BB))
+summary(BBmodel)
+TukeyHSD(BBmodel)
+
+##LBC ANOVA (Above-Ground Biomass) 
+LB=subset(BDat,Species=="LB")
+LBmodel=(aov(Biomass..grams.~Treatment, data=LB))
+summary(LBmodel)
+TukeyHSD(LBmodel)
