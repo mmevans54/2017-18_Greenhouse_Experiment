@@ -1,0 +1,149 @@
+######################################################################
+######################################################################
+######################################################################
+######################################################################
+############    MOST RECENT GREENHOUSE DATA  #########################
+########################  ANOVA   ####################################
+######################################################################
+######################################################################
+######################################################################
+######################################################################
+######################################################################
+#Packages
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+
+#Greenhouse Data
+setwd("C:/Users/Mary/Desktop/GreenhouseData")
+GhRD <- read.csv("GH_Dat.csv")
+View(GhRD)
+
+#Organizing Dates
+GhRD$Day[GhRD$Date == 11182016] = 23
+GhRD$Day[GhRD$Date == 11252016] = 30
+GhRD$Day[GhRD$Date == 12022016] = 37
+GhRD$Day[GhRD$Date == 12092016] = 44
+GhRD$Day[GhRD$Date == 12162016] = 51
+GhRD$Day[GhRD$Date == 12302016] = 65
+#2017 Measurements
+GhRD$Day[GhRD$Date == 1142017] = 79
+GhRD$Day[GhRD$Date == 1272017] = 92
+GhRD$Day[GhRD$Date == 2102017] = 106
+GhRD$Day[GhRD$Date == 2242017] = 120
+GhRD$Day[GhRD$Date == 3102017] = 134
+GhRD$Day[GhRD$Date == 3242017] = 148
+GhRD$Day[GhRD$Date == 4072017] = 162
+GhRD$Day[GhRD$Date == 4232017] = 178
+GhRD$Day[GhRD$Date == 5072017] = 192
+GhRD$Day[GhRD$Date == 10272017] = 367
+GhRD$Day[GhRD$Date == 12082017] = 407
+#2018 Measurements 
+GhRD$Day[GhRD$Date == 1162018] = 423
+
+
+#########################
+#####Make the plots######
+#########################
+
+#remove zeros from the analysis
+test<-GhRD[apply(GhRD!=0, 1, all),]
+
+####SUBSET for the dates of interest
+Day423 = subset(GhRD, Day == "423")
+
+#log trans
+Day423$logheight=log10(Day423$Height..cm.)
+
+
+######ADJUST TO FIT THE DAY OF INTEREST##############
+Rdat <- Day423 %>%
+  select (Treatment : Leaf.Number, Height..cm.)%>%
+  gather ("Attribute", "Measurement", Leaf.Number : Height..cm.)%>%
+  mutate (Attribute = as.factor(Attribute),
+          Species = ifelse(Species == "BB", "Blueberry", "Low Bush Cranberry"))
+
+# Boxplots for Height and Leaf Number, both species
+ggplot(data = Rdat, aes(x = Treatment, y = (Measurement)))+
+  geom_boxplot(outlier.alpha=0)+
+  scale_y_log10() +
+  facet_grid(Attribute~Species, scales="free")+
+  geom_jitter(height = 0, width = 0.3, alpha =.8, aes(col = Treatment))+
+  theme(axis.title.y=element_blank())+
+  labs(title="Greenhouse Experiment")+
+  theme(strip.background = element_blank())+
+  theme(axis.title.y=element_blank())+
+  scale_x_discrete(limits=c("MD","SD","UD","Sterile"))+
+  theme(legend.position="none")+
+  #facet_grid(Attribute~Species, switch = "y")+
+  scale_color_manual(values = c("salmon", "royal blue","black", "forest green" ))
+
+
+
+###BOXPLOT FOR FINAL MEASUREMENT OF LEAF NUMBER
+#remove zeros from the analysis
+setwd("C:/Users/Mary/Desktop/GreenhouseData")
+GhRD <- read.csv("Day423.csv")
+
+####Assign Day
+GhRD$Day[GhRD$Date == 1162018] = 423
+
+###GET RID OF ZEROS
+test<-GhRD[apply(GhRD!=0, 1, all),]
+View(test)
+
+####SUBSET for the dates of interest
+Day423 = subset(test, Day == "423")
+
+Dat423 <- Day423 %>%
+  select (Treatment : Species, Leaf.Number)%>%
+  gather ("Attribute", "Measurement", Leaf.Number)%>%
+  mutate (Attribute = as.numeric(Attribute),
+          Species = ifelse(Species == "BB", "Blueberry", "Low Bush Cranberry"))
+
+# Boxplots for, both species
+ggplot(data = Dat423, aes(x = Treatment, y = (Measurement)))+
+  geom_boxplot(outlier.alpha=0)+
+  facet_grid(Attribute~Species, scales="free")+
+  geom_boxplot(aes(Treatment, Measurement), stat= "boxplot")+
+  geom_jitter(height = 0, width = 0.3, alpha =.8, aes(col = Treatment))+
+  theme(axis.title.y=element_blank())+
+  labs(title="Leaf Number for Day 423")+
+  theme(strip.background = element_blank())+
+  theme(axis.title.y=element_blank())+
+  scale_x_discrete(limits=c("MD","SD","UD","Sterile"))+
+  theme(legend.position="none")+
+  scale_color_manual(values = c("salmon", "royal blue","black", "forest green"))
+
+############################
+############################
+###Run the Stats#############
+####SUBSET for the dates of interest
+dat4stat = subset(GhRD, Day == "192")
+#log trans
+dat4stat$logheight=log10(dat4stat$Height..cm.)
+BB = subset(dat4stat,Species == "BB")
+LBC = subset(dat4stat,Species == "LB")
+
+##BB ANOVA (Leaf Number)
+BBLNmodel=(aov(Leaf.Number~Treatment, data=BB))
+summary(BBLNmodel)
+plot(BBLNmodel)
+TukeyHSD(BBLNmodel)
+
+##BB ANOVA (Height)
+BBHmodel=(aov(Height..cm.~Treatment, data=BB))
+summary(BBHmodel)
+plot(BBHmodel)
+TukeyHSD(BBHmodel)
+
+##LBC ANOVA (Leaves) 
+LBC=subset(dat4stat,Species=="LB")
+LBLNmodel=(aov(Leaf.Number~Treatment, data=LBC))
+summary(LBLNmodel)
+TukeyHSD(LBLNmodel)
+
+##LBC ANOVA (Height)
+LBHmodel=(aov(Height..cm.~Treatment, data=LBC))
+summary(LBHmodel)
+TukeyHSD(LBHmodel)
