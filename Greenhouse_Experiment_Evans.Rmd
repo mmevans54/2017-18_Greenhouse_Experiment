@@ -70,7 +70,7 @@ ggplot(data = Rdat, aes(x = Treatment, y = (Measurement)))+
   theme(strip.background = element_blank())+
   scale_x_discrete(limits=c("MD","SD","UD", "Sterile"))+
   theme(legend.position="none")+
-  scale_color_manual(values = c("salmon", "violet", "black", "forest green" ))
+  scale_color_manual(values = c("salmon", "royal blue", "black", "forest green" ))
 ```
 
 ###Statistics###
